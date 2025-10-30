@@ -58,19 +58,34 @@ const server = http.createServer(async (req, res) => {
       res.end(data); // Відправляємо дані (буфер) картинки
     } catch (err) {
       if (err.code === 'ENOENT') {
-        // Файл не знайдено - це очікувана помилка
-        res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-        res.end('Not Found');
+
+        try {
+          const catUrl = `https://http.cat/${fileId}`;
+          console.log(`Кешу немає. Роблю запит на: ${catUrl}`);
+          const response = await superagent.get(catUrl);
+          const imageData = response.body;
+          await fs.writeFile(filePath, imageData);
+
+          console.log(`Зберіг картинку в кеш: ${filePath}`);
+          res.writeHead(200, { 'Content-Type': 'image/jpeg' });
+
+          res.end(imageData);
+
+        } catch (err) {
+          console.error(`Помилка під час запиту до http.cat: ${err.message}`);
+          res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+          res.end('Not Found');
+        }
+
       } else {
-        // Інша, неочікувана помилка (напр. EACCES - немає прав)
         console.error('Помилка сервера при читанні файлу:', err);
         res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
         res.end('Internal Server Error');
       }
     }
-    // --- (PUT) ---
-  } else if (req.method === 'PUT') {
+    // ---  (PUT) ---
 
+  } else if (req.method === 'PUT') {
     const chunks = [];
     req.on('data', chunk => {
       chunks.push(chunk);
@@ -92,7 +107,7 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('Bad Request');
     });
-    // --- (DELETE) ---
+    // ---  (DELETE) ---
 
   } else if (req.method === 'DELETE') {
     try {
@@ -101,22 +116,21 @@ const server = http.createServer(async (req, res) => {
       res.end('OK');
     } catch (err) {
       if (err.code === 'ENOENT') {
-        // Не можемо видалити те, чого немає - це 404
         res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
         res.end('Not Found');
       } else {
-        // Інша помилка (немає прав на видалення тощо)
+
         console.error('Помилка сервера при видаленні файлу:', err);
         res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
         res.end('Internal Server Error');
       }
     }
   } else {
-
     res.writeHead(405, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Method Not Allowed');
   }
 });
+
 server.listen(options.port, options.host, () => {
   console.log(`Server running on http://${options.host}:${options.port}`);
 });
