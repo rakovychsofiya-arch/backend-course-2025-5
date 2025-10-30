@@ -68,9 +68,9 @@ const server = http.createServer(async (req, res) => {
         res.end('Internal Server Error');
       }
     }
-
-  } else if (req.method === 'PUT') {
     // --- (PUT) ---
+  } else if (req.method === 'PUT') {
+
     const chunks = [];
     req.on('data', chunk => {
       chunks.push(chunk);
@@ -92,6 +92,29 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('Bad Request');
     });
+    // --- (DELETE) ---
+
+  } else if (req.method === 'DELETE') {
+    try {
+      const data = await fs.unlink(filePath);
+      res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('OK');
+    } catch (err) {
+      if (err.code === 'ENOENT') {
+        // Не можемо видалити те, чого немає - це 404
+        res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('Not Found');
+      } else {
+        // Інша помилка (немає прав на видалення тощо)
+        console.error('Помилка сервера при видаленні файлу:', err);
+        res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('Internal Server Error');
+      }
+    }
+  } else {
+
+    res.writeHead(405, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Method Not Allowed');
   }
 });
 server.listen(options.port, options.host, () => {
