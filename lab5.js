@@ -68,10 +68,32 @@ const server = http.createServer(async (req, res) => {
         res.end('Internal Server Error');
       }
     }
+
+  } else if (req.method === 'PUT') {
+    // --- (PUT) ---
+    const chunks = [];
+    req.on('data', chunk => {
+      chunks.push(chunk);
+    });
+    req.on('end', async () => {
+      const data = Buffer.concat(chunks);
+      try {
+        await fs.writeFile(filePath, data)
+        res.writeHead(201, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('Created');
+      } catch (err) {
+        console.error('Помилка сервера при записі файлу:', err);
+        res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('Internal Server Error');
+      }
+    });
+    req.on('error', (err) => {
+      console.error('Помилка запиту PUT:', err);
+      res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('Bad Request');
+    });
   }
 });
-
-
 server.listen(options.port, options.host, () => {
   console.log(`Server running on http://${options.host}:${options.port}`);
 });
