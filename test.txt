@@ -1,8 +1,8 @@
- curl.exe -X PUT --data-binary "@test.jpg" http://localhost:3000/200
+ curl.exe -X PUT --data-binary "@new.jpeg" http://localhost:3000/201
 -скачала картинку та встановила, що при вводі 200 вона висвічувалась
-curl.exe -X DELETE  http://localhost:3000/200 --output test.jpg
+curl.exe -X DELETE  http://localhost:3000/20q --output new.jpeg
 -команда для видалення картинки з кешу
-ls -lh cache/
+ls -lh my-cache/
 -перевірка кешу
-curl.exe -X GET http://localhost:3000/200 --output  test.jpg
+curl.exe -X GET http://localhost:3000/201 --output  new.jpeg
 -отримала зображення на сервері
